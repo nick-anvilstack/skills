@@ -1,96 +1,144 @@
-# Claude Skills for nickwinter.net
+# Claude Skills
 
-This directory contains Claude Skills that teach Claude how to perform specialized tasks. Skills are automatically loaded and used by Claude Code when relevant to your request.
+Personal Claude Skills for automation and deployment tasks. These skills teach Claude how to perform specialized tasks and are automatically invoked when relevant.
+
+**GitHub**: https://github.com/nick-anvilstack/skills
+**Location**: `~/Dropbox/misc/code/skills` (symlinked to `~/.claude/skills`)
 
 ## Available Skills
 
-### deploy-vercel-subdomain
-Deploy a Vercel project to a custom subdomain of nickwinter.net.
-- **When to use**: "Deploy this Vercel app to cube.nickwinter.net"
-- **Key detail**: Cloudflare proxy must be **disabled** (DNS only)
+| Skill | Description |
+|-------|-------------|
+| `create-skill` | Meta-skill for creating new skills with proper structure and logging |
+| `deploy-vercel-subdomain` | Deploy Vercel projects to nickwinter.net subdomains (proxy OFF) |
+| `deploy-github-pages-subdomain` | Deploy static sites via GitHub Pages to nickwinter.net subdomains (proxy ON) |
 
-### deploy-github-pages-subdomain
-Deploy a static HTML site via GitHub Pages to a custom subdomain of nickwinter.net.
-- **When to use**: "Deploy this static site to states.nickwinter.net using GitHub Pages"
-- **Key detail**: Cloudflare proxy should be **enabled** (Proxied)
+## Quick Start
 
-## How Skills Work
+### Using Skills
+Skills activate automatically in Claude Code when your request matches their description. Just describe what you want:
+- "Deploy this Vercel app to cube.nickwinter.net"
+- "Create a new skill for managing Docker deployments"
+- "Set up GitHub Pages for states.nickwinter.net"
 
-Skills are **model-invoked** - Claude automatically decides when to use them based on your request. You don't need to explicitly trigger them.
+### Creating New Skills
+```bash
+cd ~/Dropbox/misc/code/skills
+./scripts/new-skill.sh <skill-name> "Description of what this skill does"
+# Edit the SKILL.md, then:
+./scripts/publish.sh
+```
 
-For example, just say:
-- "Set up a custom domain for my Vercel project"
-- "Deploy this to a subdomain of nickwinter.net"
+Or just ask Claude: "Create a skill for [task]" and it will use the `create-skill` skill.
 
-Claude will automatically load and follow the relevant skill instructions.
+## Directory Structure
 
-## Using Skills with Different Claude Surfaces
+```
+~/Dropbox/misc/code/skills/
+├── README.md                    # This file
+├── scripts/
+│   ├── new-skill.sh            # Create new skill scaffold
+│   ├── publish.sh              # Commit and push to GitHub
+│   └── package-for-claudeai.sh # Create ZIPs for claude.ai upload
+├── logs/                        # Prompt logs documenting skill origins
+├── dist/                        # ZIP files for claude.ai (git-ignored)
+├── create-skill/               # Meta-skill for creating skills
+├── deploy-vercel-subdomain/    # Vercel deployment skill
+└── deploy-github-pages-subdomain/ # GitHub Pages deployment skill
+```
+
+## Setup on New Computers
+
+Skills sync via Dropbox. On a new computer:
+
+```bash
+# Create symlink to Dropbox location
+ln -s ~/Dropbox/misc/code/skills ~/.claude/skills
+
+# Verify
+ls -la ~/.claude/skills
+```
+
+## Using with Different Claude Surfaces
 
 ### Claude Code (CLI)
-
-**Project Skills** (this repo):
-Skills in `.claude/skills/` are automatically available to anyone working in this repository. Just clone the repo and start Claude Code.
-
-**Personal Skills** (all your projects):
-Copy skills to `~/.claude/skills/` to make them available across all your projects:
-```bash
-cp -r .claude/skills/deploy-* ~/.claude/skills/
-```
+Skills in `~/.claude/skills/` are automatically available. Just start Claude Code.
 
 ### claude.ai (Web)
-
-Skills need to be uploaded separately to claude.ai:
-
-1. Create a ZIP file of the skill directory:
-   ```bash
-   cd .claude/skills
-   zip -r deploy-vercel-subdomain.zip deploy-vercel-subdomain/
-   zip -r deploy-github-pages-subdomain.zip deploy-github-pages-subdomain/
-   ```
-
+1. Package skills: `./scripts/package-for-claudeai.sh`
 2. Go to claude.ai → Settings → Features
-
-3. Upload the ZIP files
-
-4. Each team member must upload separately (no centralized distribution on claude.ai)
-
-**Note**: Skills are not automatically synced between Claude Code and claude.ai. You must manage them separately.
+3. Upload ZIP files from `dist/`
+4. Each user must upload separately
 
 ### Claude API / Agent SDK
+See [Agent Skills documentation](https://platform.claude.com/docs/en/agents-and-tools/agent-skills/overview).
 
-Skills can be made available workspace-wide via the API. See [Agent Skills documentation](https://platform.claude.com/docs/en/agents-and-tools/agent-skills/overview).
+## Automation Scripts
 
-## Creating New Skills
-
-1. Create a directory in `.claude/skills/` with your skill name (lowercase, hyphens only)
-
-2. Create a `SKILL.md` file with this structure:
-   ```yaml
-   ---
-   name: your-skill-name
-   description: Brief description of what this Skill does and when to use it
-   ---
-
-   # Your Skill Name
-
-   Instructions for Claude to follow...
-   ```
-
-3. Keep `SKILL.md` under 500 lines. For longer content, use supporting files that Claude will load when needed.
-
-4. Restart Claude Code to load the new skill
-
-## Verifying Skills Are Loaded
-
-In Claude Code, ask:
-```
-What skills are available?
+### `new-skill.sh`
+Creates a new skill with proper structure and a prompt log template.
+```bash
+./scripts/new-skill.sh deploy-railway "Deploy apps to Railway with custom domains"
 ```
 
-Or check for a specific skill:
+### `publish.sh`
+Commits all changes and pushes to GitHub with proper commit signature.
+```bash
+./scripts/publish.sh "Add skill: deploy-railway"
+# or auto-generate message:
+./scripts/publish.sh
 ```
-Do you have a skill for deploying to Vercel subdomains?
+
+### `package-for-claudeai.sh`
+Creates ZIP files for uploading to claude.ai.
+```bash
+./scripts/package-for-claudeai.sh          # all skills
+./scripts/package-for-claudeai.sh deploy-railway  # specific skill
 ```
+
+## Creating Skills: Best Practices
+
+1. **Log the prompt**: Always record what conversation led to creating the skill
+2. **Include examples**: Concrete examples with real values are essential
+3. **Note gotchas**: Highlight key differences and common pitfalls
+4. **Keep it focused**: One skill per task; use multiple skills for complex workflows
+5. **Publish immediately**: Commit and push when the skill is ready
+6. **Update logs**: Maintain the prompt log as the skill evolves
+
+## SKILL.md Format
+
+```yaml
+---
+name: skill-name
+description: What it does AND when to use it (max 1024 chars)
+---
+
+# Skill Title
+
+Overview of what this skill does.
+
+## Prerequisites
+- What's needed before using this skill
+
+## Steps
+1. Detailed step one
+2. Detailed step two
+
+## Important Notes
+- Key things to remember
+- Common pitfalls
+
+## Example
+Concrete example with real values
+```
+
+## Prompt Logging Convention
+
+Each skill should have a corresponding log in `logs/`:
+- Records the initial prompt/conversation that led to the skill
+- Documents context and reasoning
+- Helps future agents understand the skill's purpose
+- Updated as the skill evolves
 
 ## Resources
 
